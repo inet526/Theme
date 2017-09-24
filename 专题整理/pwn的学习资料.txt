@@ -1,0 +1,135 @@
+一、gdb以及插件安装及其使用：
+    gdb主要在这讲的是linux下的使用，具体windows下的软件安装这里不叙述了。
+	gdb是linux自带的软件程序，在终端输入gdb即可打开，然后运用命令调试文件即可：
+	参考资料：
+http://blog.csdn.net/haoel/article/details/2879
+http://blog.csdn.net/haoel/article/details/2880
+http://blog.csdn.net/haoel/article/details/2881
+http://blog.csdn.net/haoel/article/details/2882
+http://blog.csdn.net/haoel/article/details/2883
+http://blog.csdn.net/liigo/article/details/582231/（这个比较推荐先看一下）
+http://www.cnblogs.com/mingcaoyouxin/p/4225619.html（大全）
+
+1.gdb-peda安装：安装过程只需要两条命令既可以
+    git clone https://github.com/longld/peda.git ~/peda
+    echo "source ~/peda/peda.py" >> ~/.gdbinit
+	安装完毕后打开gdb就OK。
+2.gdb-peda安装后使用： 可以直接HELP帮助，如果觉得吃力可以有汉语帮助：
+file 路径　　附加文件
+r   　　　　开始执行
+c              继续执行
+step          单步步入
+next          单步步过
+b *地址　　下断点
+enable       激活断点
+disable      禁用断点
+info b        查看断点
+del num     删除断点
+x/wx $esp 　　以4字节16进制显示栈中内容
+stack 100　　  插件提供的，显示栈中100项
+ find xxx　　   快速查找，很实用
+s 按字符串输出
+x 按十六进制格式显示变量。
+d 按十进制格式显示变量。
+u 按十六进制格式显示无符号整型。
+o 按八进制格式显示变量。
+t 按二进制格式显示变量。
+a 按十六进制格式显示变量。
+c 按字符格式显示变量。
+f 按浮点数格式显示变量。
+x/<n/f/u> <addr>
+
+n、f、u是可选的参数。
+b表示单字节，h表示双字节，w表示四字 节，g表示八字节
+但是实际的组合就那么几种：
+x/s 地址　　查看字符串
+x/wx 地址　　查看DWORD
+x/c 地址　　单字节查看
+x/16x $esp+12 查看寄存器偏移 
+set args 可指定运行时参数。（如：set args 10 20 30 40 50） 
+show args 命令可以查看设置好的运行参数。
+参考文献：官方英文版：https://github.com/longld/peda
+           中文教程：http://www.cnblogs.com/Ox9A82/p/5483186.html
+二、pwntools的安装及其使用
+    pwntools是一个CTF框架和漏洞利用开发库，用Python开发，由rapid设计，旨在
+让使用者简单快速的编写exploit。pwntools对Ubuntu 12.04和14.04的支持最好，但是
+绝大多数的功能也支持Debian, Arch, FreeBSD, OSX, 等等。安装前确保安装了Binutils、
+Capstone、Python Development Headers等系统库。下边主要是基于kali rolling 64 位的
+安装教程：
+    2.1 安装Capstone：终端输入以下命令，如果没有报错就OK，一般会很顺利。
+	      git clone https://github.com/aquynh/capstone
+          cd capstone
+          make
+          make install
+    2.2 安装pwntools：终端输入以下命令，
+	    git clone https://github.com/Gallopsled/pwntools
+        cd pwntools
+        python setup.py install
+		安装过程如果没有报错，那就证明安装成功，这个时候进入python输入
+		import pwn 如果没有报错就OK，限免可以运用一下测试一下：
+		pwn.asm("xor eax,eax")
+		'1\xc0'
+		如果有错误，可以参阅一下网址的常见错误处理，这里就不一一介绍了：
+		http://www.cnblogs.com/pcat/p/5451780.html
+	2.3 pwntools的使用主要是python借用pwn这个库来进行操作：学习资料：
+	    官方英文学习资料：http://pwntools.readthedocs.io/en/stable/（这个是最好的，有示例）
+		中文参考学习资料：主要是pwn里边我们经常使用的那些模板函数，不全但足可以够我们使用
+		   网址参考：http://blog.csdn.net/gyhgx/article/details/53439417 （这个只是初步学习可以先看，
+		   真正需要学习还是要看上边官方英文版的）
+三、PLT与GOT：
+        在ELF文件的动态连接机制中，每一个外部定义的符号在全局偏移表 (Global Offset Table，GOT)中有相应的条目，
+	如果符号是函数则在过程连接表(Procedure Linkage Table，PLT)中也有相应的条目，且一个PLT条目对应一个GOT条目。
+	以简单的例子观察GOT与PLT的变化机制：例子位于网址：http://www.programlife.net/linux-got-plt.html
+	（网站是一个简单的PLT与GOT之间的关系对应及其程序运行过程动态链接的变化说明）
+	    GOT（Global Offset Table）表中每一项都是本运行模块要引用的一个全局变量或函数的地址。可以用GOT表来间接
+	引用全局变量、函数，也可以把GOT表的首地址作为一个基准，用相对于该基准的偏移量来引用静态变量、静态函数。
+	由于加载器不会把运行模块加载到固定地址，在不同进程的地址空间中，各运行模块的绝对地址、相对位 置都不同。
+	这种不同反映到GOT表上，就是每个进程的每个运行模块都有独立的GOT表，所以进程间不能共享GOT表。在x86体系结构上，
+	本运行模块的GOT表首地址始终保存在%ebx寄存器中。编译器在每个函数入口处都生成一小段代码，用来初始化%ebx寄存器。
+	这一步是必要的，否则，如果对该函数的调用来自另一运行模块，%ebx中就是调用者模块的GOT表地址；不重新初始化%ebx就用来引用全局变量和函数，当然出错。
+	    学习地址内容：http://blog.csdn.net/zangcf/article/details/9251551
+四、Doublefree漏洞的分析：
+        Double Free其实就是同一个指针free两次。虽然一般把它叫做double free。其实只要是free一个指向堆内存的指针都有
+	可能产生可以利用的漏洞。double free的原理其实和堆溢出的原理差不多，都是通过unlink这个双向链表删除的宏来利用的。
+	只是double free需要由自己来伪造整个chunk并且欺骗操作系统。其实这个漏洞不是很是经常用于比赛吧，因为直接就是比较直接的考察堆
+    文章网址参考：http://www.vuln.cn/6172（简单介绍一下doublefree的原理）
+	doublefree漏洞利用：http://www.cnblogs.com/0xJDchen/p/6195919.html
+	                    http://www.cnblogs.com/elvirangel/p/7203540.html
+五、UAF（Use After Free）漏洞的分析：
+        经常出现在CTF比赛中：uaf漏洞产生的主要原因是释放了一个堆块后，并没有将该指针置为NULL，这样导致该指针处于悬空的状态，
+	同样被释放的内存如果被恶意构造数据，就有可能会被利用.
+	一个比较系统的uaf漏洞学习文章：http://netsecurity.51cto.com/art/201701/528332.htm
+	                              http://www.cnblogs.com/alert123/p/4918041.html（有个小例子分析的uaf分析）
+								  http://blog.csdn.net/u012763794/article/details/68059625（IE上的uaf漏洞分析与利用）
+								  http://netsecurity.51cto.com/art/201403/433681_all.htm（漏洞利用技巧文章）
+								  CVE-UAF Analysis
+六、ret2libc攻击方法：
+        攻击方法大量使用Shellcode，核心思想是修改EIP和注入Shellcode，在函数返回时跳到Shellcode去执行。要防止这种攻击，
+	最有效的办法就是让攻击者注入的Shellcode无法执行，这就是数据执行保护（Data Execution Prevention， DEP）安全机制的初衷。
+	那么此时就可运用ret2libc的方法进行绕过DEP进行攻击：这里先简单介绍一下ret2libc的原理及其应用：
+	两篇入门文章：http://blog.csdn.net/linyt/article/details/43643499
+	                http://blog.csdn.net/zcc1414/article/details/11709405（如何利用ret2libc关闭dep进程）
+	一部书：Oday安全：软件漏洞分析 电子版地址：http://book.51cto.com/art/201107/275126.htm（第十二章是本章节所需）
+	ret2libc工具原代码下载：http://www.csdn.net/tag/ret2libc/download
+	两篇OD：DEP & Ret2libc http://www.cnblogs.com/exclm/p/4006716.html
+	        OD: DEP - Ret2Libc via VirtualProtect() & VirtualAlloc() 网址：http://www.cnblogs.com/exclm/p/4012166.html
+七、ROP攻击技术：
+        ROP的全称为Return-oriented programming（返回导向编程），这是一种高级的内存攻击技术可以用来绕过现代操作系统的各种通用防御（比如内存不可执行和代码签名等）。
+	另外译者推荐，如果想更好的学习ROP技术，可以参考蒸米大神的一步一步学ROP系列文章，请自行查找。
+    ROP是一种攻击技术，其中攻击者使用堆栈的控制来在现有程序代码中的子程序中的返回指令之前，立即间接地执行精心挑选的指令或机器指令组。
+    因为所有执行的指令来自原始程序内的可执行存储器区域，所以这避免了直接代码注入的麻烦，并绕过了用来阻止来自用户控制的存储器的指令的执行的大多数安全措施。
+    因此，ROP技术是可以用来绕过现有的程序内部内存的保护机制的。在学习下面的内容之前，先确保自己已经了解了基本的堆栈溢出的漏洞原理。
+	首先介绍几篇文章让大家对此先了解：http://www.vuln.cn/6645（学习rop开端）
+	                                  http://www.myhack58.com/Article/60/76/2017/84985_2.htm（基于栈溢出）
+									  http://bobao.360.cn/learning/detail/3569.html（ROP技术入门教程，这个需要好好看）
+									  https://ketansingh.net/Introduction-to-Return-Oriented-Programming-ROP/（外国一篇关于ROP的介绍）
+									  http://blog.csdn.net/linyt/article/details/48738757（ROP一个简单小例子）
+									  http://blog.csdn.net/jiayanhui2877/article/details/48496145（ROP绕过DEO和ASRL流程实例教程）
+	一步步学习ROP三篇技术教程：      
+	                                  http://www.vuln.cn/6643（gadgets and 2free）
+									  http://blog.csdn.net/jltxgcy/article/details/50695580(Linux_x86)
+									  http://www.vuln.cn/6642（Android ARM）
+八、缓冲区溢出攻击：http://www.cnblogs.com/fanzhidongyzby/archive/2013/08/10/3250405.html
+                     http://blog.csdn.net/wangxiaolong_china/article/details/6844415（基本栈溢出攻击原理及实验）
+					 https://www.secpulse.com/archives/32328.html（64位栈溢出教程）
+					 
